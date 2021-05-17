@@ -11,6 +11,7 @@ on:
 env:
   # Path to the solution file relative to the root of the project.
   SOLUTION_FILE_PATH: ./msbuild-tasks-demo.sln
+  LOG_PAH: ./msbuild.binlog
 
   # Configuration type to build.
   # You can convert this to a build matrix if you need coverage of multiple configuration types.
@@ -35,11 +36,11 @@ jobs:
       working-directory: ${{env.GITHUB_WORKSPACE}}
       # Add additional options to the MSBuild command line here (like platform or verbosity level).
       # See https://docs.microsoft.com/visualstudio/msbuild/msbuild-command-line-reference
-      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}} /bl
+      run: msbuild /m /p:Configuration=${{env.BUILD_CONFIGURATION}} ${{env.SOLUTION_FILE_PATH}} /bl:${{env.LOG_PATH}}
       
     - name: Upload build log
       uses: actions/upload-artifact@v2.2.3
       with:
         name: msbuild.binlog
-        path: ./msbuild.binlog
+        path: ${{env.LOG_PATH}}
         retention-days: 15
