@@ -1,0 +1,87 @@
+<Project InitialTargets="GenerateAllFiles">
+	<UsingTask
+    TaskName="WriteEncodedId"
+    TaskFactory="RoslynCodeTaskFactory"
+    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll" >
+		<ParameterGroup>
+			<Features ParameterType="Microsoft.Build.Framework.ITaskItem[]" Required="true" />
+			<Path ParameterType="System.String" Required="True" />
+			<FileNames ParameterType="Microsoft.Build.Framework.ITaskItem[]" Output="true" />
+		</ParameterGroup>
+		<Task>
+			<Code Type="Fragment" Language="cs">
+				<![CDATA[
+				System.Collections.Generic.List<TaskItem> fileNames = new System.Collections.Generic.List<TaskItem>();
+				foreach (ITaskItem f in Features)
+				{
+					int id = int.Parse(f.ItemSpec);
+					Log.LogMessage("Encoding " + id.ToString());
+					
+					int encodedId = id % 100;
+					string fileName = System.IO.Path.Combine(Path, encodedId.ToString() + ".txt");
+					
+					string description = f.GetMetadata("Description") as string;
+					string text = encodedId.ToString() + "\n" + description;
+					
+					System.IO.File.WriteAllText(fileName, text);
+					fileNames.Add(new TaskItem(fileName));
+				}
+				
+				FileNames = fileNames.ToArray();
+				
+				]]>
+			</Code>
+		</Task>
+	</UsingTask>
+
+	<Target Name="GenerateAllFiles"
+			Returns="@(IdFiles)"
+			DependsOnTargets="GenerateFiles;GenerateFilesUsingWriteLineToFilesTask;ThirdWay;ProcessSingleId" />
+	<!--
+		Whatever comes in as input in @(Feature) is used as input. 
+	-->
+	<Target Name="GenerateFiles" Returns="@(EncodedIdFiles)">
+		<MakeDir Directories="$(IntermediateOutputPath)" />
+		
+		<WriteEncodedId Features="@(Feature)" Path="$(IntermediateOutputPath)">
+			<Output TaskParameter="FileNames" ItemName="IdFiles" />
+		</WriteEncodedId>
+		<Message Text="@(IdFiles)" />
+	</Target>
+
+	<Target Name="GenerateFilesUsingWriteLineToFilesTask">
+		<WriteLinesToFile File="$(IntermediateOutputPath)%(Feature.Identity).txt" Lines="%(Feature.Description)" />
+		<ItemGroup>
+			<IdFiles Include="$(IntermediateOutputPath)%(Feature.Identity).txt" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="ThirdWay">
+		<ItemGroup>
+			<Lines Include="@(Feature)">
+				<FilePath>$(IntermediateOutputPath)thirdway\%(Feature.Identity).txt</FilePath>
+				<Content><![CDATA[
+					%(Feature.Identity)
+					%(Feature.Description)
+				]]></Content>
+			</Lines>
+		</ItemGroup>
+		<MakeDir Directories="$(IntermediateOutputPath)thirdway" />
+		<WriteLinesToFile File="%(Lines.FilePath)" Lines="%(Lines.Content)" />
+		<ItemGroup>
+			<IdFiles Include="%(Lines.FilePath)" Lines="%(Lines.Content)" />
+		</ItemGroup>
+	</Target>
+
+	<Target Name="ProcessSingleId">
+		<MakeDir Directories="$(IntermediateOutputPath)SingleId" />
+		<ItemGroup>
+			<SingleId Include="1">
+				<Description>Single Id</Description>
+			</SingleId>
+		</ItemGroup>
+		<WriteEncodedId Features="@(SingleId)" Path="$(IntermediateOutputPath)SingleId">
+			<Output TaskParameter="FileNames" ItemName="IdFiles" />
+		</WriteEncodedId>
+	</Target>
+</Project>

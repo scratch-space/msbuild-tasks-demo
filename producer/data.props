@@ -1,0 +1,7 @@
+<Project>
+    <ItemGroup>
+        <Feature Include="12345678" Description="Hello World" />
+        <Feature Include="23456789" Description="Another Id" />
+        <Feature Include="34567890" />
+    </ItemGroup>
+</Project>

@@ -1,0 +1,5 @@
+<Project>
+    <Target Name="DisplayIdFiles" AfterTargets="ResolveProjectReferences">
+        <Message Importance="high" Text="%(ProducerOutputItems.Identity)" />
+    </Target>
+</Project>
